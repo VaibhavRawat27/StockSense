@@ -1,6 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Search, Filter, RefreshCw, AlertTriangle, CheckCircle2, Edit3, MapPin, Package, ArrowUpDown, X, Loader2 } from 'lucide-react';
+import { Building2, Search, RefreshCw, AlertTriangle, Edit3, MapPin, X, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
+
+const C = {
+  navy: '#1e2a4a',
+  muted: '#6b7a99',
+  dim: '#94a3b8',
+  border: 'rgba(0, 0, 0, 0.08)',
+  blue: '#2563eb',
+  blueBg: 'rgba(37, 99, 235, 0.08)',
+  amber: '#b45309',
+  amberBg: 'rgba(245, 158, 11, 0.12)',
+  green: '#047857',
+  greenBg: 'rgba(16, 185, 129, 0.12)',
+  red: '#b91c1c',
+  redBg: 'rgba(244, 63, 94, 0.1)',
+  panelBg: '#f8fafc',
+};
+
+const cardStyle = {
+  background: '#ffffff',
+  border: `1px solid ${C.border}`,
+  borderRadius: '14px',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+};
+
+const inputStyle = {
+  width: '100%',
+  fontSize: '0.9rem',
+  color: C.navy,
+  background: '#ffffff',
+  border: `1px solid ${C.border}`,
+  borderRadius: '10px',
+  padding: '10px 12px',
+  outline: 'none',
+};
+
+const labelStyle = {
+  fontSize: '0.8rem',
+  fontWeight: 600,
+  color: C.muted,
+  marginBottom: '6px',
+  display: 'block',
+};
 
 export default function StockAvailability() {
   const [stockList, setStockList] = useState([]);
@@ -10,7 +52,6 @@ export default function StockAvailability() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Quick Adjustment Modal state
   const [adjustingItem, setAdjustingItem] = useState(null);
   const [adjustQty, setAdjustQty] = useState(0);
   const [adjustBin, setAdjustBin] = useState('');
@@ -40,6 +81,7 @@ export default function StockAvailability() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWarehouse, onlyAlerts]);
 
   const handleOpenAdjust = (item) => {
@@ -87,28 +129,26 @@ export default function StockAvailability() {
   return (
     <div>
       {/* Top Header & Filters */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px',
-        marginBottom: '20px'
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
         <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#fff', margin: 0 }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: '800', color: C.navy, margin: 0 }}>
             Stock Availability per Location
           </h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p style={{ fontSize: '0.85rem', color: C.muted, marginTop: '4px' }}>
             Real-time on-hand inventory levels and storage bins across warehouse facilities
           </p>
         </div>
 
-        <button 
-          type="button" 
-          className="btn btn-secondary" 
+        <button
+          type="button"
           onClick={loadData}
           title="Refresh stock levels"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '10px 16px', fontSize: '0.85rem', fontWeight: 600,
+            background: '#f1f5f9', color: '#334155', border: `1px solid ${C.border}`,
+            borderRadius: '10px', cursor: 'pointer',
+          }}
         >
           <RefreshCw size={15} className={loading ? 'spinner' : ''} />
           <span>Refresh Live Stock</span>
@@ -117,13 +157,17 @@ export default function StockAvailability() {
 
       {/* Toast Alert */}
       {toast && (
-        <div 
-          className={`alert ${toast.type === 'error' ? 'alert-error' : 'alert-success'}`}
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-        >
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 16px', borderRadius: '10px', marginBottom: '18px',
+          background: toast.type === 'error' ? C.redBg : C.greenBg,
+          color: toast.type === 'error' ? C.red : C.green,
+          border: `1px solid ${toast.type === 'error' ? 'rgba(244,63,94,0.25)' : 'rgba(16,185,129,0.25)'}`,
+          fontSize: '0.88rem',
+        }}>
           <span>{toast.text}</span>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setToast(null)}
             style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontWeight: '700' }}
           >
@@ -133,50 +177,41 @@ export default function StockAvailability() {
       )}
 
       {/* Filter Toolbar */}
-      <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '20px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          {/* Warehouse Selector */}
+      <div style={{ ...cardStyle, padding: '16px 20px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ flex: '1 1 260px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Building2 size={16} color="#0ea5e9" />
-            <select
-              className="input-field no-icon"
-              value={selectedWarehouse}
-              onChange={e => setSelectedWarehouse(e.target.value)}
-            >
-              <option value="" style={{ background: '#111726' }}>All Warehouse Facilities (Consolidated)</option>
+            <Building2 size={16} color={C.blue} />
+            <select style={inputStyle} value={selectedWarehouse} onChange={e => setSelectedWarehouse(e.target.value)}>
+              <option value="">All Warehouse Facilities (Consolidated)</option>
               {warehouses.map(w => (
-                <option key={w.id} value={w.id} style={{ background: '#111726' }}>
-                  {w.name} ({w.code})
-                </option>
+                <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
               ))}
             </select>
           </div>
 
-          {/* Search Box */}
           <div style={{ flex: '1 1 240px', position: 'relative' }}>
-            <Search size={16} className="input-icon" />
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: C.dim }} />
             <input
               type="text"
-              className="input-field"
+              style={{ ...inputStyle, paddingLeft: '40px' }}
               placeholder="Search product, SKU, or bin location..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
 
-          {/* Reorder Alerts Toggle Pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
-              className={`btn ${onlyAlerts ? 'btn-danger' : 'btn-secondary'}`}
-              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
               onClick={() => setOnlyAlerts(!onlyAlerts)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                fontSize: '0.8rem', fontWeight: 600, padding: '9px 14px', borderRadius: '10px',
+                cursor: 'pointer', border: '1px solid',
+                background: onlyAlerts ? C.redBg : '#f1f5f9',
+                color: onlyAlerts ? C.red : '#334155',
+                borderColor: onlyAlerts ? 'rgba(244,63,94,0.3)' : C.border,
+              }}
             >
               <AlertTriangle size={14} />
               {onlyAlerts ? 'Showing Low Stock Only' : 'Filter Low Stock Triggers'}
@@ -186,32 +221,32 @@ export default function StockAvailability() {
       </div>
 
       {/* Availability Table */}
-      <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="data-table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-          <table className="data-table">
+      <div style={{ ...cardStyle, padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
-              <tr>
-                <th>Warehouse Site</th>
-                <th>Product & SKU</th>
-                <th>Storage Bin</th>
-                <th>On-Hand Qty</th>
-                <th>Reorder Threshold</th>
-                <th>Stock Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+              <tr style={{ background: '#f8fafc', borderBottom: `1px solid ${C.border}` }}>
+                <th style={thStyle}>Warehouse Site</th>
+                <th style={thStyle}>Product & SKU</th>
+                <th style={thStyle}>Storage Bin</th>
+                <th style={thStyle}>On-Hand Qty</th>
+                <th style={thStyle}>Reorder Threshold</th>
+                <th style={thStyle}>Stock Status</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: C.muted }}>
                     <RefreshCw size={20} className="spinner" style={{ marginBottom: '8px' }} />
                     <div>Loading warehouse stock distribution...</div>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                    <Building2 size={32} color="var(--text-dim)" style={{ marginBottom: '8px' }} />
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: C.muted }}>
+                    <Building2 size={32} color={C.dim} style={{ marginBottom: '8px' }} />
                     <div>No location stock records found.</div>
                   </td>
                 </tr>
@@ -222,83 +257,68 @@ export default function StockAvailability() {
                   const isLow = qty <= min;
 
                   return (
-                    <tr key={item.stock_id}>
-                      {/* Warehouse Site */}
-                      <td>
-                        <div style={{ fontWeight: '700', color: '#fff', fontSize: '0.9rem' }}>
-                          {item.warehouse_name}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-                          {item.warehouse_code}
+                    <tr key={item.stock_id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                      <td style={tdStyle}>
+                        <div style={{ fontWeight: '700', color: C.navy, fontSize: '0.9rem' }}>{item.warehouse_name}</div>
+                        <div style={{ fontSize: '0.72rem', color: C.dim, fontFamily: 'var(--font-mono)' }}>{item.warehouse_code}</div>
+                      </td>
+
+                      <td style={tdStyle}>
+                        <div style={{ fontWeight: '600', color: C.navy, fontSize: '0.9rem' }}>{item.product_name}</div>
+                        <div style={{ fontSize: '0.72rem', color: C.blue, fontFamily: 'var(--font-mono)' }}>
+                          {item.product_sku} &bull; <span style={{ color: C.dim }}>{item.category_name}</span>
                         </div>
                       </td>
 
-                      {/* Product Name & SKU */}
-                      <td>
-                        <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.9rem' }}>
-                          {item.product_name}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
-                          {item.product_sku} &bull; <span style={{ color: 'var(--text-dim)' }}>{item.category_name}</span>
-                        </div>
-                      </td>
-
-                      {/* Storage Bin Location */}
-                      <td>
+                      <td style={tdStyle}>
                         <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '0.78rem',
-                          background: 'rgba(14, 165, 233, 0.1)',
-                          border: '1px solid rgba(14, 165, 233, 0.25)',
-                          color: '#38bdf8',
-                          padding: '3px 8px',
-                          borderRadius: '6px'
+                          display: 'inline-flex', alignItems: 'center', gap: '5px',
+                          fontFamily: 'var(--font-mono)', fontSize: '0.78rem',
+                          background: C.blueBg, border: '1px solid rgba(37,99,235,0.2)',
+                          color: C.blue, padding: '3px 8px', borderRadius: '6px',
                         }}>
                           <MapPin size={12} /> {item.bin_location || 'A-01'}
                         </span>
                       </td>
 
-                      {/* Quantity */}
-                      <td>
-                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: isLow ? '#fbbf24' : '#fff' }}>
-                          {qty} <span style={{ fontSize: '0.75rem', fontWeight: '400', color: 'var(--text-dim)' }}>{item.uom}</span>
+                      <td style={tdStyle}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: '800', color: isLow ? C.amber : C.navy }}>
+                          {qty} <span style={{ fontSize: '0.75rem', fontWeight: '400', color: C.dim }}>{item.uom}</span>
                         </div>
                       </td>
 
-                      {/* Min / Max Reorder Threshold */}
-                      <td>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          Min: <strong style={{ color: '#fbbf24' }}>{min}</strong> | Max: {item.max_stock}
+                      <td style={tdStyle}>
+                        <div style={{ fontSize: '0.8rem', color: C.muted }}>
+                          Min: <strong style={{ color: C.amber }}>{min}</strong> | Max: {item.max_stock}
                         </div>
                         {isLow && (
-                          <div style={{ fontSize: '0.7rem', color: '#fbbf24', marginTop: '2px' }}>
+                          <div style={{ fontSize: '0.7rem', color: C.amber, marginTop: '2px' }}>
                             Deficit: {Math.max(0, min - qty)} {item.uom}
                           </div>
                         )}
                       </td>
 
-                      {/* Status */}
-                      <td>
+                      <td style={tdStyle}>
                         {qty === 0 ? (
-                          <span className="badge badge-danger">Out of Stock</span>
+                          <StatusBadge text="Out of Stock" color={C.red} bg={C.redBg} />
                         ) : isLow ? (
-                          <span className="badge badge-warning">⚠️ Below Min ({min})</span>
+                          <StatusBadge text={`⚠️ Below Min (${min})`} color={C.amber} bg={C.amberBg} />
                         ) : (
-                          <span className="badge badge-success">✓ Stock Optimal</span>
+                          <StatusBadge text="✓ Stock Optimal" color={C.green} bg={C.greenBg} />
                         )}
                       </td>
 
-                      {/* Actions */}
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ ...tdStyle, textAlign: 'right' }}>
                         <button
                           type="button"
-                          className="btn btn-secondary"
-                          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
                           onClick={() => handleOpenAdjust(item)}
                           title="Adjust on-hand count or bin"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            padding: '6px 12px', fontSize: '0.78rem', fontWeight: 600,
+                            background: '#f1f5f9', color: '#334155', border: `1px solid ${C.border}`,
+                            borderRadius: '8px', cursor: 'pointer',
+                          }}
                         >
                           <Edit3 size={13} />
                           <span>Adjust</span>
@@ -315,72 +335,75 @@ export default function StockAvailability() {
 
       {/* Adjust Stock Modal */}
       {adjustingItem && (
-        <div className="modal-overlay" onClick={() => setAdjustingItem(null)}>
-          <div className="modal-content" style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: '#fff', margin: 0 }}>
+        <div
+          onClick={() => setAdjustingItem(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#ffffff', border: `1px solid ${C.border}`, borderRadius: '18px',
+              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.25)', width: '100%', maxWidth: '480px',
+              maxHeight: '90vh', overflowY: 'auto',
+            }}
+          >
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: '700', color: C.navy, margin: 0 }}>
                 Adjust Stock Level & Bin
               </h3>
-              <button 
-                type="button" 
-                onClick={() => setAdjustingItem(null)} 
-                className="input-action-btn"
-                style={{ position: 'static' }}
+              <button
+                type="button"
+                onClick={() => setAdjustingItem(null)}
+                style={{ background: 'transparent', border: 'none', color: C.muted, cursor: 'pointer', padding: '4px' }}
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSaveAdjust}>
-              <div className="modal-body">
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '12px 16px',
-                  marginBottom: '16px'
-                }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>
-                    {adjustingItem.product_name}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+              <div style={{ padding: '24px' }}>
+                <div style={{ background: C.panelBg, border: `1px solid ${C.border}`, borderRadius: '10px', padding: '12px 16px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: C.navy }}>{adjustingItem.product_name}</div>
+                  <div style={{ fontSize: '0.75rem', color: C.dim, fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
                     SKU: {adjustingItem.product_sku} | Facility: {adjustingItem.warehouse_name}
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Updated On-Hand Quantity ({adjustingItem.uom})</label>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={labelStyle}>Updated On-Hand Quantity ({adjustingItem.uom})</label>
                   <input
                     type="number"
                     min="0"
-                    className="input-field no-icon"
-                    style={{ fontSize: '1.1rem', fontWeight: '700' }}
+                    style={{ ...inputStyle, fontSize: '1.1rem', fontWeight: '700' }}
                     value={adjustQty}
                     onChange={e => setAdjustQty(e.target.value)}
                     required
                   />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '3px' }}>
+                  <span style={{ fontSize: '0.72rem', color: C.dim, marginTop: '3px', display: 'block' }}>
                     Previous recorded count: {adjustingItem.quantity} {adjustingItem.uom}
                   </span>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Storage Bin / Rack Location</label>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={labelStyle}>Storage Bin / Rack Location</label>
                   <input
                     type="text"
-                    className="input-field no-icon"
-                    style={{ fontFamily: 'var(--font-mono)' }}
+                    style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }}
                     placeholder="e.g. A-12-01 or BAY-NORTH-04"
                     value={adjustBin}
                     onChange={e => setAdjustBin(e.target.value)}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Adjustment Reason / Audit Note</label>
+                <div>
+                  <label style={labelStyle}>Adjustment Reason / Audit Note</label>
                   <input
                     type="text"
-                    className="input-field no-icon"
+                    style={inputStyle}
                     placeholder="e.g. Cycle count reconciliation, damaged goods write-off"
                     value={adjustReason}
                     onChange={e => setAdjustReason(e.target.value)}
@@ -388,8 +411,19 @@ export default function StockAvailability() {
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setAdjustingItem(null)}>
+              <div style={{
+                padding: '16px 24px', borderTop: `1px solid ${C.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px',
+                background: C.panelBg,
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setAdjustingItem(null)}
+                  style={{
+                    padding: '10px 18px', borderRadius: '10px', fontWeight: 600, fontSize: '0.9rem',
+                    background: '#f1f5f9', color: '#334155', border: `1px solid ${C.border}`, cursor: 'pointer',
+                  }}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={submittingAdjust}>
@@ -401,5 +435,27 @@ export default function StockAvailability() {
         </div>
       )}
     </div>
+  );
+}
+
+const thStyle = {
+  padding: '14px 16px',
+  fontWeight: 600,
+  color: '#94a3b8',
+  textTransform: 'uppercase',
+  fontSize: '0.75rem',
+  letterSpacing: '0.5px',
+};
+
+const tdStyle = { padding: '14px 16px' };
+
+function StatusBadge({ text, color, bg }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 600,
+      padding: '3px 9px', borderRadius: '9999px', color, background: bg,
+    }}>
+      {text}
+    </span>
   );
 }
