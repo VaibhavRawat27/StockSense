@@ -34,6 +34,21 @@ const initUsers = () => {
 
         CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
         CREATE INDEX IF NOT EXISTS idx_users_employee_id ON users(employee_id);
+
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            email TEXT NOT NULL COLLATE NOCASE,
+            token TEXT NOT NULL,
+            code TEXT NOT NULL,
+            expires_at DATETIME NOT NULL,
+            used INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_code ON password_resets(code);
+        CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
     `);
 
     const countResult = db.prepare("SELECT COUNT(*) AS count FROM users").get();

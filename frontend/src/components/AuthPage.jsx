@@ -8,6 +8,7 @@ import {
   Phone,
   Layers,
   ArrowRight,
+  ArrowLeft,
   Eye,
   EyeOff,
   CheckCircle2,
@@ -19,24 +20,65 @@ import {
   Database,
   LogOut,
   BadgeCheck,
-  Package
+  Package,
+  KeyRound,
+  Send,
+  HelpCircle,
+  RefreshCw
 } from 'lucide-react';
 import { api, getStoredUser, clearAuthSession } from '../services/api';
 
 export default function AuthPage({ onEnterMasterData }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loggedInUser, setLoggedInUser] = useState(null);
 
-  // Check if session was already active on mount
+  // Forgot & Reset Password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [devCodePreview, setDevCodePreview] = useState(null);
+  const [smtpStatus, setSmtpStatus] = useState(null);
+  const [showSmtpInfo, setShowSmtpInfo] = useState(false);
+
+  // Check session and parse potential reset link parameters on mount
   useEffect(() => {
     const existingUser = getStoredUser();
     if (existingUser) {
       setLoggedInUser(existingUser);
       setSuccessMsg('Active session detected. Logged in successfully!');
+    }
+
+    // Check Google SMTP configuration status from backend
+    api.getSmtpStatus()
+      .then(res => {
+        if (res && res.smtp) setSmtpStatus(res.smtp);
+      })
+      .catch(() => {});
+
+    // Parse URL query parameters for reset links
+    const urlParams = new URLSearchParams(window.location.search);
+    const modeParam = urlParams.get('mode');
+    const emailParam = urlParams.get('email');
+    const tokenParam = urlParams.get('token');
+    const codeParam = urlParams.get('code');
+
+    if (modeParam === 'reset' || tokenParam || codeParam) {
+      setMode('reset');
+      if (emailParam) {
+        setResetEmail(emailParam);
+        setForgotEmail(emailParam);
+      }
+      if (codeParam) setResetCode(codeParam);
+      if (tokenParam) setResetToken(tokenParam);
+      setSuccessMsg('Reset code recognized from link. Please enter your new password.');
     }
   }, []);
 
@@ -144,6 +186,91 @@ export default function AuthPage({ onEnterMasterData }) {
       setSuccessMsg(`Registration Successful! Account created in SQLite.`);
     } catch (err) {
       setErrorMsg(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Forgot Password (triggers email via Google SMTP)
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+    setDevCodePreview(null);
+
+    if (!forgotEmail.trim()) {
+      setErrorMsg('Please enter your registered account email.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.forgotPassword(forgotEmail.trim());
+      setSuccessMsg(res.message || 'Password reset email sent! Check your inbox.');
+      setResetEmail(forgotEmail.trim());
+      if (res.devCode) {
+        setDevCodePreview(res.devCode);
+        setResetCode(res.devCode);
+      }
+      if (res.devToken) {
+        setResetToken(res.devToken);
+      }
+      setMode('reset');
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to initiate password reset.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Password Reset (updates password in SQLite)
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!resetEmail.trim()) {
+      setErrorMsg('Email address is required.');
+      return;
+    }
+    if (!resetCode.trim() && !resetToken) {
+      setErrorMsg('Please enter the 6-digit verification code from your email.');
+      return;
+    }
+    if (!newPassword) {
+      setErrorMsg('Please enter a new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmResetPassword) {
+      setErrorMsg('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await api.resetPassword({
+        email: resetEmail.trim(),
+        code: resetCode.trim(),
+        token: resetToken,
+        new_password: newPassword,
+        confirm_password: confirmResetPassword,
+      });
+
+      setSuccessMsg(res.message || 'Password updated successfully! Please log in.');
+      setLoginEmail(resetEmail.trim());
+      setLoginPassword('');
+      setNewPassword('');
+      setConfirmResetPassword('');
+      setResetCode('');
+      setResetToken('');
+      setDevCodePreview(null);
+      setMode('login');
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
@@ -341,6 +468,375 @@ export default function AuthPage({ onEnterMasterData }) {
               Sign Out / Log in as Another User
             </button>
           </div>
+        ) : mode === 'forgot' ? (
+          /* ================= FORGOT PASSWORD VIEW (GOOGLE SMTP) ================= */
+          <div style={{ animation: 'fadeIn 0.25s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  padding: '4px 0'
+                }}
+              >
+                <ArrowLeft size={16} /> Back to Sign In
+              </button>
+
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.75rem',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: smtpStatus?.configured ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                color: smtpStatus?.configured ? '#34d399' : '#fbbf24',
+                border: `1px solid ${smtpStatus?.configured ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+              }}>
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: smtpStatus?.configured ? '#10b981' : '#f59e0b'
+                }}></span>
+                <span>{smtpStatus?.configured ? `Google SMTP Active` : 'SMTP Pending in .env'}</span>
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'left', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#fff', margin: '0 0 6px 0' }}>
+                Forgot Password?
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.45' }}>
+                Enter your work email address below. We will send a 6-digit verification code and reset instructions via Google SMTP.
+              </p>
+            </div>
+
+            {/* Google SMTP Setup Guide Callout */}
+            <div style={{
+              background: 'rgba(14, 165, 233, 0.07)',
+              border: '1px solid rgba(14, 165, 233, 0.22)',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 14px',
+              marginBottom: '18px',
+              fontSize: '0.8rem',
+              color: '#cbd5e1'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', fontWeight: '600' }}>
+                  <HelpCircle size={15} />
+                  <span>Google App Password SMTP Setup</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpInfo(!showSmtpInfo)}
+                  style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '0.75rem', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {showSmtpInfo ? 'Hide Setup Guide' : 'How to Setup'}
+                </button>
+              </div>
+              {showSmtpInfo && (
+                <div style={{ marginTop: '10px', color: '#94a3b8', lineHeight: '1.5', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px' }}>
+                  <div style={{ marginBottom: '4px' }}>1. Open Google Account &rarr; <strong>Security</strong> &rarr; Enable <strong>2-Step Verification</strong>.</div>
+                  <div style={{ marginBottom: '4px' }}>2. Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>myaccount.google.com/apppasswords</a>.</div>
+                  <div style={{ marginBottom: '4px' }}>3. Name the app <strong>StockSense</strong>, generate a 16-character App Password, and paste it into <code>backend/.env</code> as <code>SMTP_PASS</code>.</div>
+                  <div style={{ marginTop: '6px', color: '#64748b', fontSize: '0.75rem' }}>
+                    <em>💡 Note: For immediate local testing, the generated reset code is also displayed in the server console and previewed.</em>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Error Alert */}
+            {errorMsg && (
+              <div className="alert alert-error">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {successMsg && (
+              <div className="alert alert-success">
+                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleForgotSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  <Mail size={15} /> Registered Work Email
+                </label>
+                <div className="input-wrapper">
+                  <Mail size={16} className="input-icon" />
+                  <input
+                    type="email"
+                    className="input-field"
+                    placeholder="manager@stocksense.com or staff@stocksense.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ width: '100%', marginTop: '14px' }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="spinner" />
+                    Dispatching via Google SMTP...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} />
+                    Send Reset Email via Google SMTP
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '18px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              Already received your 6-digit code?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('reset');
+                  setResetEmail(forgotEmail || '');
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: '600', textDecoration: 'underline' }}
+              >
+                Enter Code & Reset Password &rarr;
+              </button>
+            </div>
+          </div>
+        ) : mode === 'reset' ? (
+          /* ================= RESET PASSWORD VIEW ================= */
+          <div style={{ animation: 'fadeIn 0.25s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  padding: '4px 0'
+                }}
+              >
+                <ArrowLeft size={16} /> Back to Sign In
+              </button>
+
+              <span style={{ fontSize: '0.75rem', color: '#38bdf8', background: 'rgba(14, 165, 233, 0.1)', padding: '4px 10px', borderRadius: '999px', border: '1px solid rgba(14, 165, 233, 0.2)' }}>
+                Step 2 of 2: Set Password
+              </span>
+            </div>
+
+            <div style={{ textAlign: 'left', marginBottom: '18px' }}>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#fff', margin: '0 0 6px 0' }}>
+                Set New Password
+              </h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0, lineHeight: '1.45' }}>
+                Enter the 6-digit verification code sent to your email, then set a new secure password.
+              </p>
+            </div>
+
+            {/* Dev Code Autofill Banner */}
+            {devCodePreview && (
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                borderRadius: 'var(--radius-md)',
+                padding: '12px 14px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.73rem', textTransform: 'uppercase', color: '#a7f3d0', fontWeight: '700', letterSpacing: '0.5px' }}>
+                    Local Dev OTP Code:
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: '800', color: '#34d399', letterSpacing: '4px' }}>
+                    {devCodePreview}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetCode(devCodePreview);
+                    setSuccessMsg('OTP Code auto-filled into form!');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '6px' }}
+                >
+                  Autofill Code
+                </button>
+              </div>
+            )}
+
+            {/* Error Alert */}
+            {errorMsg && (
+              <div className="alert alert-error">
+                <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Success Alert */}
+            {successMsg && (
+              <div className="alert alert-success">
+                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleResetSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  <Mail size={15} /> Registered Email
+                </label>
+                <div className="input-wrapper">
+                  <Mail size={16} className="input-icon" />
+                  <input
+                    type="email"
+                    className="input-field"
+                    placeholder="your-email@stocksense.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label">
+                    <KeyRound size={15} /> 6-Digit Verification Code
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Valid for 15 minutes</span>
+                </div>
+                <div className="input-wrapper">
+                  <KeyRound size={16} className="input-icon" />
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="123456"
+                    maxLength={6}
+                    style={{ letterSpacing: '6px', fontSize: '1.15rem', fontWeight: '700', fontFamily: 'var(--font-mono)' }}
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  <Lock size={15} /> New Password
+                </label>
+                <div className="input-wrapper">
+                  <Lock size={16} className="input-icon" />
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    className="input-field"
+                    placeholder="At least 6 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="input-action-btn"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                  >
+                    {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  <Lock size={15} /> Confirm New Password
+                </label>
+                <div className="input-wrapper">
+                  <Lock size={16} className="input-icon" />
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    className="input-field"
+                    placeholder="Confirm matching password"
+                    value={confirmResetPassword}
+                    onChange={(e) => setConfirmResetPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ width: '100%', marginTop: '14px' }}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="spinner" />
+                    Updating Password in SQLite...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    Reset Password & Return to Login
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', fontSize: '0.82rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('forgot');
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                  setForgotEmail(resetEmail);
+                }}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <RefreshCw size={13} /> Resend Code
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Back to Sign In
+              </button>
+            </div>
+          </div>
         ) : (
           /* ================= LOGIN & REGISTER FORMS ================= */
           <>
@@ -440,6 +936,28 @@ export default function AuthPage({ onEnterMasterData }) {
                     <label className="form-label">
                       <Lock size={15} /> Password
                     </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('forgot');
+                        setErrorMsg('');
+                        setSuccessMsg('');
+                        if (loginEmail) setForgotEmail(loginEmail);
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#38bdf8',
+                        fontSize: '0.78rem',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        padding: '0',
+                        textDecoration: 'underline',
+                        textUnderlineOffset: '2px',
+                      }}
+                    >
+                      Forgot Password?
+                    </button>
                   </div>
                   <div className="input-wrapper">
                     <Lock size={16} className="input-icon" />

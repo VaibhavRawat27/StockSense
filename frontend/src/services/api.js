@@ -92,6 +92,44 @@ export const api = {
     return handleResponse(response);
   },
 
+  async forgotPassword(email) {
+    const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    return handleResponse(response);
+  },
+
+  async verifyResetCode(email, code, token) {
+    const response = await fetch(`${API_BASE}/auth/verify-reset-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code, token }),
+    });
+    return handleResponse(response);
+  },
+
+  async resetPassword(payload) {
+    const response = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(response);
+  },
+
+  async getSmtpStatus() {
+    const response = await fetch(`${API_BASE}/auth/smtp-status`);
+    return handleResponse(response);
+  },
+
   async checkHealth() {
     const response = await fetch(`${API_BASE}/health`);
     return handleResponse(response);

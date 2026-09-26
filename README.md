@@ -78,6 +78,35 @@ Stored in SQLite at `backend/data/stock-sense.db` with WAL mode enabled:
 - `suppliers`: Supplier and vendor contact directory.
 - `stock_ledger`: Immutable audit trail for all stock movements.
 - `users`: Role-based authentication (`manager`, `staff`).
+- `password_resets`: Password reset OTP verification codes (6-digit), tokens, expiry timestamps, and usage tracking.
+
+---
+
+## 🔑 Google SMTP Password Reset Flow
+
+StockSense includes an end-to-end Password Recovery module powered by **Google SMTP** with **Google App Passwords**:
+
+### How to Configure Google SMTP (`backend/.env`):
+1. Go to your **Google Account** ([https://myaccount.google.com/](https://myaccount.google.com/)).
+2. Under **Security**, confirm **2-Step Verification** is turned **ON**.
+3. Search for **App passwords** or visit: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+4. Create an app named **"StockSense"** and copy the 16-character code (e.g. `abcd efgh ijkl mnop`).
+5. Open `backend/.env` and update:
+   ```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=465
+   SMTP_SECURE=true
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=abcdefghijklmnop
+   SMTP_FROM="StockSense Security <your-email@gmail.com>"
+   ```
+> *Development Note*: In local development, if SMTP credentials have not yet been populated, the system runs in safe development simulation mode: generated 6-digit OTP codes and direct reset links are displayed on the server terminal and surfaced in the dev banner.
+
+### Password Recovery Endpoints:
+- `POST /api/auth/forgot-password`: Generates a 6-digit OTP code + secure token with 15-minute expiration, stores in SQLite, and dispatches rich HTML email via Google SMTP.
+- `POST /api/auth/verify-reset-code`: Verifies code/token validity before submitting password.
+- `POST /api/auth/reset-password`: Validates code, enforces password rules, encrypts new password with bcrypt, updates SQLite `users` table, and invalidates the token.
+- `GET /api/auth/smtp-status`: Reports active Google SMTP connection readiness.
 
 ---
 
@@ -85,9 +114,13 @@ Stored in SQLite at `backend/data/stock-sense.db` with WAL mode enabled:
 
 Base URL: `http://localhost:5000/api`
 
-### Auth Endpoints (Public)
+### Auth & Password Recovery Endpoints (Public)
 - `POST /api/auth/login`: Authenticate with email & password, receives JWT.
 - `POST /api/auth/register`: Create inventory manager or warehouse staff account.
+- `POST /api/auth/forgot-password`: Request password reset email via Google SMTP.
+- `POST /api/auth/verify-reset-code`: Validate 6-digit OTP reset code.
+- `POST /api/auth/reset-password`: Update account password with verification code.
+- `GET /api/auth/smtp-status`: Check Google SMTP configuration status.
 - `GET /api/auth/me`: Validate JWT and return current user profile (*Requires Bearer Token*).
 
 ### Products (Auth Guarded 🔒)
@@ -130,6 +163,9 @@ cd backend
 
 # Run Phase 4 Auth, Product & Performance Test Suite (53 assertions)
 npm test
+
+# Run Forgot Password & Google SMTP Test Suite (26 assertions)
+npm run test:forgot-password
 
 # Run Operational Flow End-to-End Test (Receipts -> Transfers -> Deliveries -> Adjustments)
 npm run test:e2e
