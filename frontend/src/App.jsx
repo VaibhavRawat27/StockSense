@@ -6,6 +6,9 @@ import Receipts from './pages/Receipts';
 import MoveHistory from './pages/MoveHistory';
 import DeliveryOrders from './pages/DeliveryOrders';
 import InventoryAdjustment from './pages/InventoryAdjustment';
+import ProductsPage from './pages/ProductsPage';
+import SettingsPage from './pages/SettingsPage';
+import AuthPage from './components/AuthPage';
 import './App.css';
 
 function App() {
@@ -18,10 +21,14 @@ function App() {
         </div>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/products" element={<ProductsPage />} />
           <Route path="/operations/receipts" element={<Receipts />} />
           <Route path="/operations/move-history" element={<MoveHistory />} />
           <Route path="/operations/delivery" element={<DeliveryOrders />} />
           <Route path="/operations/adjustments" element={<InventoryAdjustment />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings/warehouse" element={<SettingsPage />} />
+          <Route path="/login" element={<AuthPage />} />
         </Routes>
       </main>
     </div>
