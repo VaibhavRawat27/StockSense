@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
 function Sidebar() {
@@ -5,20 +6,20 @@ function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-logo">StockSense</div>
       <nav className="sidebar-nav">
-        <a href="#" className="nav-item active">Dashboard</a>
-        <a href="#" className="nav-item">Products</a>
+        <NavLink to="/" end className="nav-item">Dashboard</NavLink>
+        <NavLink to="/products" className="nav-item">Products</NavLink>
 
         <div className="nav-group-label">Operations</div>
-        <a href="#" className="nav-item sub-item">Receipts</a>
-        <a href="#" className="nav-item sub-item">Delivery Orders</a>
-        <a href="#" className="nav-item sub-item">Inventory Adjustment</a>
-        <a href="#" className="nav-item sub-item">Move History</a>
+        <NavLink to="/operations/receipts" className="nav-item sub-item">Receipts</NavLink>
+        <NavLink to="/operations/delivery" className="nav-item sub-item">Delivery Orders</NavLink>
+        <NavLink to="/operations/adjustments" className="nav-item sub-item">Inventory Adjustment</NavLink>
+        <NavLink to="/operations/move-history" className="nav-item sub-item">Move History</NavLink>
 
-        <a href="#" className="nav-item">Settings</a>
+        <NavLink to="/settings" className="nav-item">Settings</NavLink>
       </nav>
       <div className="sidebar-footer">
-        <a href="#" className="nav-item">My Profile</a>
-        <a href="#" className="nav-item">Logout</a>
+        <NavLink to="/profile" className="nav-item">My Profile</NavLink>
+        <NavLink to="/logout" className="nav-item">Logout</NavLink>
       </div>
     </aside>
   );
