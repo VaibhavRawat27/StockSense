@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const db = require("./config/database");
@@ -64,6 +65,21 @@ app.get("/api/health", (req, res) => {
         const whCount = db.prepare("SELECT COUNT(*) AS total_warehouses FROM warehouses").get();
         const catCount = db.prepare("SELECT COUNT(*) AS total_categories FROM categories").get();
 
+        const alertCountResult = db.prepare(`
+            SELECT COUNT(*) AS low_stock_alerts_count
+            FROM products p
+            WHERE (
+                SELECT COALESCE(SUM(quantity), 0)
+                FROM stock_levels
+                WHERE product_id = p.id
+            ) <= COALESCE(p.min_stock, p.reorder_level, 0)
+        `).get();
+
+        const totalUnitsResult = db.prepare(`
+            SELECT COALESCE(SUM(quantity), 0) AS total_units_in_stock
+            FROM stock_levels
+        `).get();
+
         res.json({
             status: "OK",
             timestamp: new Date().toISOString(),
@@ -72,6 +88,8 @@ app.get("/api/health", (req, res) => {
             total_products: prodCount.total_products,
             total_warehouses: whCount.total_warehouses,
             total_categories: catCount.total_categories,
+            low_stock_alerts_count: alertCountResult.low_stock_alerts_count,
+            total_units_in_stock: totalUnitsResult.total_units_in_stock,
         });
     } catch (err) {
         res.status(500).json({
