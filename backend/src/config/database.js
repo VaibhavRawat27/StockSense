@@ -132,7 +132,17 @@ const initMasterData = () => {
     ensureColumn("stock_levels", "bin_location", "TEXT DEFAULT 'A-01'");
     ensureColumn("stock_levels", "updated_at", "TEXT DEFAULT (datetime('now'))");
 
-    // 5. Seed initial Categories if empty
+    // 5. Performance indexes for sub-second SKU search, reorder rules, and smart filters
+    db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+        CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+        CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
+        CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+        CREATE INDEX IF NOT EXISTS idx_stock_levels_lookup ON stock_levels(product_id, warehouse_id);
+        CREATE INDEX IF NOT EXISTS idx_warehouses_code ON warehouses(code);
+    `);
+
+    // 6. Seed initial Categories if empty
     const catCount = db.prepare("SELECT COUNT(*) AS count FROM categories").get();
     if (catCount.count === 0) {
         console.log("Seeding initial Product Categories...");
@@ -191,6 +201,18 @@ const initMasterData = () => {
             "Elena Rostova",
             "+1 (555) 345-6789"
         );
+    }
+
+    // Seed initial Suppliers if empty (needed for receipts and team integration flows)
+    const supCount = db.prepare("SELECT COUNT(*) AS count FROM suppliers").get();
+    if (supCount.count === 0) {
+        console.log("Seeding initial Suppliers...");
+        const insertSupplier = db.prepare(`
+            INSERT INTO suppliers (name, contact_email) VALUES (?, ?)
+        `);
+        insertSupplier.run("Apex Steel & Industrial Supplies", "supplies@apexsteel.com");
+        insertSupplier.run("ZebraTech Distribution", "orders@zebratech.com");
+        insertSupplier.run("Grainger Industrial Safety", "support@grainger.com");
     }
 
     // 7. Seed initial Products & Stock Levels if empty

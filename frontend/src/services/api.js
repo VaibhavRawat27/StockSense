@@ -22,9 +22,21 @@ export const clearAuthSession = () => {
   localStorage.removeItem('stocksense_user');
 };
 
+export const getAuthHeaders = () => {
+  const token = getStoredToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 const handleResponse = async (response) => {
   const data = await response.json().catch(() => ({ message: 'Server response parsing error' }));
   if (!response.ok) {
+    if (response.status === 401) {
+      console.warn('Unauthorized request to protected API. Session may be expired or missing.');
+    }
     throw new Error(data.message || 'An unexpected error occurred with the server.');
   }
   return data;
@@ -63,22 +75,18 @@ export const api = {
   },
 
   async getMe() {
-    const token = getStoredToken();
-    if (!token) return null;
-
     const response = await fetch(`${API_BASE}/auth/me`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...getAuthHeaders(),
       },
     });
     return handleResponse(response);
   },
 
   async getTeam() {
-    const token = getStoredToken();
     const response = await fetch(`${API_BASE}/auth/team`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...getAuthHeaders(),
       },
     });
     return handleResponse(response);
@@ -90,25 +98,36 @@ export const api = {
   },
 
   // ==========================================
-  // PHASE 3: MASTER DATA APIS
+  // PHASE 3 & 4: AUTH-GUARDED MASTER DATA APIS
   // ==========================================
 
-  // Products
+  // Products (Auth-guarded)
   async getProducts(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE}/products${query ? `?${query}` : ''}`);
+    const response = await fetch(`${API_BASE}/products${query ? `?${query}` : ''}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async getProductById(id) {
-    const response = await fetch(`${API_BASE}/products/${id}`);
+    const response = await fetch(`${API_BASE}/products/${id}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async createProduct(data) {
     const response = await fetch(`${API_BASE}/products`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -117,7 +136,10 @@ export const api = {
   async updateProduct(id, data) {
     const response = await fetch(`${API_BASE}/products/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -126,20 +148,30 @@ export const api = {
   async deleteProduct(id) {
     const response = await fetch(`${API_BASE}/products/${id}`, {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeaders(),
+      },
     });
     return handleResponse(response);
   },
 
-  // Categories
+  // Categories (Auth-guarded)
   async getCategories() {
-    const response = await fetch(`${API_BASE}/categories`);
+    const response = await fetch(`${API_BASE}/categories`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async createCategory(data) {
     const response = await fetch(`${API_BASE}/categories`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -148,7 +180,10 @@ export const api = {
   async updateCategory(id, data) {
     const response = await fetch(`${API_BASE}/categories/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -157,25 +192,39 @@ export const api = {
   async deleteCategory(id) {
     const response = await fetch(`${API_BASE}/categories/${id}`, {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeaders(),
+      },
     });
     return handleResponse(response);
   },
 
-  // Warehouses (Settings -> Warehouse)
+  // Warehouses (Settings -> Warehouse, Auth-guarded)
   async getWarehouses() {
-    const response = await fetch(`${API_BASE}/warehouses`);
+    const response = await fetch(`${API_BASE}/warehouses`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async getWarehouseById(id) {
-    const response = await fetch(`${API_BASE}/warehouses/${id}`);
+    const response = await fetch(`${API_BASE}/warehouses/${id}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async createWarehouse(data) {
     const response = await fetch(`${API_BASE}/warehouses`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -184,7 +233,10 @@ export const api = {
   async updateWarehouse(id, data) {
     const response = await fetch(`${API_BASE}/warehouses/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
@@ -193,28 +245,42 @@ export const api = {
   async deleteWarehouse(id) {
     const response = await fetch(`${API_BASE}/warehouses/${id}`, {
       method: 'DELETE',
+      headers: {
+        ...getAuthHeaders(),
+      },
     });
     return handleResponse(response);
   },
 
-  // Stock Availability per Location & Reorder Alerts
+  // Stock Availability per Location & Reorder Alerts (Auth-guarded)
   async getStockAvailability(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_BASE}/stock${query ? `?${query}` : ''}`);
+    const response = await fetch(`${API_BASE}/stock${query ? `?${query}` : ''}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   },
 
   async adjustStock(data) {
     const response = await fetch(`${API_BASE}/stock/adjust`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 
   async getReorderAlerts() {
-    const response = await fetch(`${API_BASE}/stock/alerts`);
+    const response = await fetch(`${API_BASE}/products/alerts`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
     return handleResponse(response);
   }
 };

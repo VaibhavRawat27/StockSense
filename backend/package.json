@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "node src/tests/phase4-auth-product.test.js",
+    "test:e2e": "node src/tests/e2e-flow.js"
   },
   "keywords": [],
   "author": "",

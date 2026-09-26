@@ -7,7 +7,20 @@ const db = require("../config/database");
  * Query params: ?search=&category_id=&status=&sort=
  */
 const getProducts = (req, res) => {
-    const { search, category_id, status } = req.query;
+    const startTime = performance.now();
+    const { 
+        search, 
+        sku, 
+        category_id, 
+        category, 
+        warehouse_id, 
+        status, 
+        vendor, 
+        min_price, 
+        max_price, 
+        sort_by, 
+        sort_order 
+    } = req.query;
 
     try {
         let query = `
@@ -37,18 +50,65 @@ const getProducts = (req, res) => {
 
         const params = [];
 
+        // Exact or prefix SKU Search
+        if (sku && sku.trim()) {
+            const cleanSku = sku.trim().toUpperCase();
+            query += " AND (p.sku = ? OR p.sku LIKE ?)";
+            params.push(cleanSku, `${cleanSku}%`);
+        }
+
+        // Category filters
         if (category_id) {
             query += " AND p.category_id = ?";
             params.push(category_id);
+        } else if (category && category.trim()) {
+            query += " AND (c.name LIKE ? OR c.code = ? OR p.category LIKE ?)";
+            const catTerm = `%${category.trim()}%`;
+            params.push(catTerm, category.trim().toUpperCase(), catTerm);
         }
 
+        // Free-text smart search
         if (search && search.trim()) {
-            query += " AND (p.name LIKE ? OR p.sku LIKE ? OR p.barcode LIKE ?)";
+            query += " AND (p.name LIKE ? OR p.sku LIKE ? OR p.barcode LIKE ? OR p.description LIKE ? OR c.name LIKE ?)";
             const term = `%${search.trim()}%`;
-            params.push(term, term, term);
+            params.push(term, term, term, term, term);
         }
 
-        query += " GROUP BY p.id ORDER BY p.name ASC";
+        // Preferred vendor filter
+        if (vendor && vendor.trim()) {
+            query += " AND p.preferred_vendor LIKE ?";
+            params.push(`%${vendor.trim()}%`);
+        }
+
+        // Price range filters
+        if (min_price !== undefined && !isNaN(Number(min_price))) {
+            query += " AND p.price >= ?";
+            params.push(Number(min_price));
+        }
+        if (max_price !== undefined && !isNaN(Number(max_price))) {
+            query += " AND p.price <= ?";
+            params.push(Number(max_price));
+        }
+
+        // Warehouse location filter
+        if (warehouse_id) {
+            query += " AND p.id IN (SELECT product_id FROM stock_levels WHERE warehouse_id = ?)";
+            params.push(Number(warehouse_id));
+        }
+
+        query += " GROUP BY p.id";
+
+        // Sort configuration
+        const validSortFields = {
+            name: 'p.name',
+            sku: 'p.sku',
+            price: 'p.price',
+            created_at: 'p.created_at',
+            stock: 'total_stock'
+        };
+        const sortCol = validSortFields[sort_by] || 'p.name';
+        const sortDir = (sort_order && sort_order.toLowerCase() === 'desc') ? 'DESC' : 'ASC';
+        query += ` ORDER BY ${sortCol} ${sortDir}`;
 
         const products = db.prepare(query).all(...params);
 
@@ -88,6 +148,7 @@ const getProducts = (req, res) => {
 
             let stockStatus = 'optimal';
             let alertMessage = 'Stock level is healthy';
+            const isReorderNeeded = totalStock <= minStock;
 
             if (totalStock === 0) {
                 stockStatus = 'out_of_stock';
@@ -100,7 +161,7 @@ const getProducts = (req, res) => {
                 alertMessage = `Notice: Stock (${totalStock}) exceeds maximum target capacity (${maxStock})`;
             }
 
-            const suggestedReorder = (totalStock <= minStock) 
+            const suggestedReorder = isReorderNeeded 
                 ? (p.reorder_qty > 0 ? p.reorder_qty : Math.max(1, maxStock - totalStock))
                 : 0;
 
@@ -110,27 +171,87 @@ const getProducts = (req, res) => {
                 min_stock: minStock,
                 max_stock: maxStock,
                 stock_status: stockStatus,
+                reorder_needed: isReorderNeeded,
                 alert_message: alertMessage,
+                deficit: Math.max(0, minStock - totalStock),
                 suggested_reorder_qty: suggestedReorder,
                 locations: stockMap[p.id] || []
             };
         });
 
-        // Filter by status if requested
+        // Smart status filter
         const filtered = status
             ? enriched.filter(p => {
-                if (status === 'low_stock') return p.stock_status === 'low_stock' || p.stock_status === 'out_of_stock';
+                if (status === 'low_stock') return p.stock_status === 'low_stock';
                 if (status === 'out_of_stock') return p.stock_status === 'out_of_stock';
+                if (status === 'reorder_needed') return p.reorder_needed;
                 if (status === 'optimal') return p.stock_status === 'optimal';
                 if (status === 'overstock') return p.stock_status === 'overstock';
                 return true;
             })
             : enriched;
 
+        const executionTimeMs = Math.round((performance.now() - startTime) * 100) / 100;
+
         return res.json({
             success: true,
             count: filtered.length,
+            execution_time_ms: executionTimeMs,
             data: filtered
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+/**
+ * GET /api/products/alerts
+ * Dedicated feed for low-stock alerts hooked to each product's reordering rule
+ */
+const getReorderAlerts = (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                p.id,
+                p.name,
+                p.sku,
+                COALESCE(c.name, 'Uncategorized') AS category_name,
+                COALESCE(p.uom, p.unit, 'Units') AS uom,
+                COALESCE(p.min_stock, p.reorder_level, 0) AS min_stock,
+                COALESCE(p.max_stock, 100) AS max_stock,
+                COALESCE(p.reorder_qty, 50) AS reorder_qty,
+                p.preferred_vendor,
+                COALESCE(SUM(sl.quantity), 0) AS total_stock
+            FROM products p
+            LEFT JOIN categories c ON c.id = p.category_id
+            LEFT JOIN stock_levels sl ON sl.product_id = p.id
+            GROUP BY p.id
+            HAVING COALESCE(SUM(sl.quantity), 0) <= COALESCE(p.min_stock, p.reorder_level, 0)
+            ORDER BY total_stock ASC
+        `;
+
+        const alerts = db.prepare(query).all();
+
+        const enriched = alerts.map(a => {
+            const current = Number(a.total_stock);
+            const minStk = Number(a.min_stock);
+            const maxStk = Number(a.max_stock);
+            const deficit = Math.max(0, minStk - current);
+            const suggestedReorder = a.reorder_qty > 0 ? a.reorder_qty : Math.max(1, maxStk - current);
+
+            return {
+                ...a,
+                deficit,
+                suggested_reorder_qty: suggestedReorder,
+                urgency: current === 0 ? 'CRITICAL' : 'WARNING',
+                alert_trigger: `Stock (${current}) <= Reorder Point (${minStk})`
+            };
+        });
+
+        return res.json({
+            success: true,
+            count: enriched.length,
+            data: enriched
         });
     } catch (err) {
         return res.status(500).json({ success: false, message: err.message });
@@ -436,6 +557,11 @@ const deleteProduct = (req, res) => {
 
         db.exec("BEGIN");
         db.prepare("DELETE FROM stock_levels WHERE product_id = ?").run(id);
+        db.prepare("DELETE FROM stock_ledger WHERE product_id = ?").run(id);
+        db.prepare("DELETE FROM adjustments WHERE product_id = ?").run(id);
+        db.prepare("DELETE FROM receipt_items WHERE product_id = ?").run(id);
+        db.prepare("DELETE FROM delivery_items WHERE product_id = ?").run(id);
+        db.prepare("DELETE FROM transfer_items WHERE product_id = ?").run(id);
         db.prepare("DELETE FROM products WHERE id = ?").run(id);
         db.exec("COMMIT");
 
@@ -449,6 +575,7 @@ const deleteProduct = (req, res) => {
 module.exports = {
     getProducts,
     getProductById,
+    getReorderAlerts,
     createProduct,
     updateProduct,
     deleteProduct,
