@@ -6,6 +6,10 @@ const receiptRoutes = require("./routes/receiptRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const transferRoutes = require("./routes/transferRoutes");
 const adjustmentRoutes = require("./routes/adjustmentRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const warehouseRoutes = require("./routes/warehouseRoutes");
+const productRoutes = require("./routes/productRoutes");
+const stockRoutes = require("./routes/stockRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +28,12 @@ app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/adjustments", adjustmentRoutes);
 
+// Phase 3: Master Data Management Routes
+app.use("/api/categories", categoryRoutes);
+app.use("/api/warehouses", warehouseRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/stock", stockRoutes);
+
 app.get("/", (req, res) => {
     res.json({
         name: "StockSense API",
@@ -34,6 +44,14 @@ app.get("/", (req, res) => {
             login: "POST /api/auth/login",
             me: "GET /api/auth/me",
             health: "GET /api/health",
+            categories: "/api/categories",
+            warehouses: "/api/warehouses",
+            products: "/api/products",
+            stock: "/api/stock",
+            receipts: "/api/receipts",
+            deliveries: "/api/deliveries",
+            transfers: "/api/transfers",
+            adjustments: "/api/adjustments"
         },
     });
 });
@@ -42,12 +60,18 @@ app.get("/api/health", (req, res) => {
     try {
         const result = db.prepare("SELECT 1 AS database_status").get();
         const userCount = db.prepare("SELECT COUNT(*) AS total_users FROM users").get();
+        const prodCount = db.prepare("SELECT COUNT(*) AS total_products FROM products").get();
+        const whCount = db.prepare("SELECT COUNT(*) AS total_warehouses FROM warehouses").get();
+        const catCount = db.prepare("SELECT COUNT(*) AS total_categories FROM categories").get();
 
         res.json({
             status: "OK",
             timestamp: new Date().toISOString(),
             database: result.database_status === 1 ? "connected" : "error",
             total_registered_users: userCount.total_users,
+            total_products: prodCount.total_products,
+            total_warehouses: whCount.total_warehouses,
+            total_categories: catCount.total_categories,
         });
     } catch (err) {
         res.status(500).json({

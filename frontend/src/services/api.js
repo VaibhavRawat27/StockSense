@@ -1,4 +1,4 @@
-// API service for StockSense authentication and backend communication
+// API service for StockSense authentication and master data communication
 
 const API_BASE = '/api';
 
@@ -31,6 +31,7 @@ const handleResponse = async (response) => {
 };
 
 export const api = {
+  // Auth
   async login(email, password) {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
@@ -85,6 +86,135 @@ export const api = {
 
   async checkHealth() {
     const response = await fetch(`${API_BASE}/health`);
+    return handleResponse(response);
+  },
+
+  // ==========================================
+  // PHASE 3: MASTER DATA APIS
+  // ==========================================
+
+  // Products
+  async getProducts(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/products${query ? `?${query}` : ''}`);
+    return handleResponse(response);
+  },
+
+  async getProductById(id) {
+    const response = await fetch(`${API_BASE}/products/${id}`);
+    return handleResponse(response);
+  },
+
+  async createProduct(data) {
+    const response = await fetch(`${API_BASE}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async updateProduct(id, data) {
+    const response = await fetch(`${API_BASE}/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async deleteProduct(id) {
+    const response = await fetch(`${API_BASE}/products/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  // Categories
+  async getCategories() {
+    const response = await fetch(`${API_BASE}/categories`);
+    return handleResponse(response);
+  },
+
+  async createCategory(data) {
+    const response = await fetch(`${API_BASE}/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async updateCategory(id, data) {
+    const response = await fetch(`${API_BASE}/categories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async deleteCategory(id) {
+    const response = await fetch(`${API_BASE}/categories/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  // Warehouses (Settings -> Warehouse)
+  async getWarehouses() {
+    const response = await fetch(`${API_BASE}/warehouses`);
+    return handleResponse(response);
+  },
+
+  async getWarehouseById(id) {
+    const response = await fetch(`${API_BASE}/warehouses/${id}`);
+    return handleResponse(response);
+  },
+
+  async createWarehouse(data) {
+    const response = await fetch(`${API_BASE}/warehouses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async updateWarehouse(id, data) {
+    const response = await fetch(`${API_BASE}/warehouses/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async deleteWarehouse(id) {
+    const response = await fetch(`${API_BASE}/warehouses/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse(response);
+  },
+
+  // Stock Availability per Location & Reorder Alerts
+  async getStockAvailability(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/stock${query ? `?${query}` : ''}`);
+    return handleResponse(response);
+  },
+
+  async adjustStock(data) {
+    const response = await fetch(`${API_BASE}/stock/adjust`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async getReorderAlerts() {
+    const response = await fetch(`${API_BASE}/stock/alerts`);
     return handleResponse(response);
   }
 };

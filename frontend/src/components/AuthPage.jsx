@@ -18,11 +18,12 @@ import {
   Sparkles,
   Database,
   LogOut,
-  BadgeCheck
+  BadgeCheck,
+  Package
 } from 'lucide-react';
 import { api, getStoredUser, clearAuthSession } from '../services/api';
 
-export default function AuthPage() {
+export default function AuthPage({ onEnterMasterData }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -191,6 +192,17 @@ export default function AuthPage() {
           }}>
             StockSense
           </span>
+          {onEnterMasterData && (
+            <button
+              type="button"
+              onClick={onEnterMasterData}
+              className="btn btn-secondary"
+              style={{ padding: '4px 12px', fontSize: '0.78rem', borderRadius: '999px', marginLeft: '6px' }}
+            >
+              <Package size={13} color="#0ea5e9" />
+              <span>Master Data Hub &rarr;</span>
+            </button>
+          )}
 
         </div>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>
@@ -304,6 +316,19 @@ export default function AuthPage() {
                 </div>
               </div>
             </div>
+
+            {/* Open Master Data Console Button */}
+            {onEnterMasterData && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={onEnterMasterData}
+                style={{ width: '100%', marginBottom: '12px', padding: '12px' }}
+              >
+                <Package size={18} />
+                <span>Open Product & Master Data Hub &rarr;</span>
+              </button>
+            )}
 
             {/* Logout / Switch User Button */}
             <button
