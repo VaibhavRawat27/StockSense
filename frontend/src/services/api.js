@@ -292,7 +292,10 @@ export const api = {
 
   // Stock Availability per Location & Reorder Alerts (Auth-guarded)
   async getStockAvailability(params = {}) {
-    const query = new URLSearchParams(params).toString();
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+    );
+    const query = new URLSearchParams(cleanParams).toString();
     const response = await fetch(`${API_BASE}/stock${query ? `?${query}` : ''}`, {
       headers: {
         ...getAuthHeaders(),
@@ -320,5 +323,53 @@ export const api = {
       },
     });
     return handleResponse(response);
-  }
+  },
+
+  // ==========================================
+  // INTERNAL TRANSFERS (Auth-guarded)
+  // ==========================================
+
+  async getTransfers(params = {}) {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+    );
+    const query = new URLSearchParams(cleanParams).toString();
+    const response = await fetch(`${API_BASE}/transfers${query ? `?${query}` : ''}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
+
+  async getTransferById(id) {
+    const response = await fetch(`${API_BASE}/transfers/${id}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
+
+  async createTransfer(data) {
+    const response = await fetch(`${API_BASE}/transfers`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async validateTransfer(id) {
+    const response = await fetch(`${API_BASE}/transfers/${id}/validate`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
 };

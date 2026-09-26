@@ -13,6 +13,7 @@ function Sidebar({ user, onLogout }) {
         <div className="nav-group-label">Operations</div>
         <NavLink to="/operations/receipts" className="nav-item sub-item">Receipts</NavLink>
         <NavLink to="/operations/delivery" className="nav-item sub-item">Delivery Orders</NavLink>
+        <NavLink to="/operations/transfers" className="nav-item sub-item">Internal Transfers</NavLink>
         <NavLink to="/operations/adjustments" className="nav-item sub-item">Inventory Adjustment</NavLink>
         <NavLink to="/operations/move-history" className="nav-item sub-item">Move History</NavLink>
 
