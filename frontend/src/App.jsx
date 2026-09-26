@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Receipts from './pages/Receipts';
 import MoveHistory from './pages/MoveHistory';
 import DeliveryOrders from './pages/DeliveryOrders';
+import InventoryAdjustment from './pages/InventoryAdjustment';
 import './App.css';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/operations/receipts" element={<Receipts />} />
           <Route path="/operations/move-history" element={<MoveHistory />} />
           <Route path="/operations/delivery" element={<DeliveryOrders />} />
+          <Route path="/operations/adjustments" element={<InventoryAdjustment />} />
         </Routes>
       </main>
     </div>
