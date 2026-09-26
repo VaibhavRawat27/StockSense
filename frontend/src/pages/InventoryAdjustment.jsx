@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FilterBar from '../components/FilterBar';
 
 const mockAdjustments = [
@@ -8,10 +8,16 @@ const mockAdjustments = [
 ];
 
 function InventoryAdjustment() {
+  const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredAdjustments = mockAdjustments.filter((item) => {
     return (
@@ -32,34 +38,38 @@ function InventoryAdjustment() {
         onCategoryChange={setCategoryFilter}
       />
 
-      <table>
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Status</th>
-            <th>Warehouse</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAdjustments.length === 0 ? (
+      {isLoading ? (
+        <div className="loading-state">Loading adjustments…</div>
+      ) : (
+        <table>
+          <thead>
             <tr>
-              <td colSpan="4" className="empty-state">
-                No adjustments match your filters.
-              </td>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Warehouse</th>
             </tr>
-          ) : (
-            filteredAdjustments.map((item) => (
-              <tr key={item.id}>
-                <td>{item.product}</td>
-                <td>{item.qty}</td>
-                <td>{item.status}</td>
-                <td>{item.warehouse}</td>
+          </thead>
+          <tbody>
+            {filteredAdjustments.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="empty-state">
+                  No adjustments match your filters.
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              filteredAdjustments.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.product}</td>
+                  <td>{item.qty}</td>
+                  <td>{item.status}</td>
+                  <td>{item.warehouse}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

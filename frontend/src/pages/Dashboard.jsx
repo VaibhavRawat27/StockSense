@@ -41,7 +41,11 @@ function Dashboard() {
 
       <div className="kpi-row">
         <KpiCard label="Total Catalog Products" value={stats.totalProducts} />
-        <KpiCard label="Low Stock / Reorder Alerts" value={stats.lowStock} />
+        <KpiCard
+          label="Low Stock / Reorder Alerts"
+          value={stats.lowStock}
+          status={stats.lowStock > 0 ? 'alert' : undefined}
+        />
         <KpiCard label="Active Warehouse Sites" value={stats.totalWarehouses} />
         <KpiCard label="Pending Receipts" value={stats.pendingReceipts} />
         <KpiCard label="Pending Deliveries" value={stats.pendingDeliveries} />

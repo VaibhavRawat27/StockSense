@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FilterBar from '../components/FilterBar';
 
 const mockReceipts = [
@@ -8,10 +8,16 @@ const mockReceipts = [
 ];
 
 function Receipts() {
+  const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredReceipts = mockReceipts.filter((item) => {
     return (
@@ -32,34 +38,38 @@ function Receipts() {
         onCategoryChange={setCategoryFilter}
       />
 
-      <table>
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Status</th>
-            <th>Warehouse</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredReceipts.length === 0 ? (
+      {isLoading ? (
+        <div className="loading-state">Loading receipts…</div>
+      ) : (
+        <table>
+          <thead>
             <tr>
-              <td colSpan="4" className="empty-state">
-                No receipts match your filters.
-              </td>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Status</th>
+              <th>Warehouse</th>
             </tr>
-          ) : (
-            filteredReceipts.map((item) => (
-              <tr key={item.id}>
-                <td>{item.product}</td>
-                <td>{item.qty}</td>
-                <td>{item.status}</td>
-                <td>{item.warehouse}</td>
+          </thead>
+          <tbody>
+            {filteredReceipts.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="empty-state">
+                  No receipts match your filters.
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              filteredReceipts.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.product}</td>
+                  <td>{item.qty}</td>
+                  <td>{item.status}</td>
+                  <td>{item.warehouse}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
