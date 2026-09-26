@@ -292,7 +292,10 @@ export const api = {
 
   // Stock Availability per Location & Reorder Alerts (Auth-guarded)
   async getStockAvailability(params = {}) {
-    const query = new URLSearchParams(params).toString();
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+    );
+    const query = new URLSearchParams(cleanParams).toString();
     const response = await fetch(`${API_BASE}/stock${query ? `?${query}` : ''}`, {
       headers: {
         ...getAuthHeaders(),
