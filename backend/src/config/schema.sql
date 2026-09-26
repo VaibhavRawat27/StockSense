@@ -85,3 +85,46 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
     reference_id INTEGER NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
+
+
+-- ============================================================
+-- DELIVERY ORDERS (Phase 2 — Outgoing Stock)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS deliveries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
+    status TEXT NOT NULL DEFAULT 'draft'
+        CHECK (status IN ('draft', 'waiting', 'ready', 'done', 'canceled')),
+    created_at TEXT DEFAULT (datetime('now')),
+    validated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS delivery_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    delivery_id INTEGER NOT NULL REFERENCES deliveries(id),
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL CHECK (quantity > 0)
+);
+
+-- ============================================================
+-- INTERNAL TRANSFERS (Phase 2 — Move stock between locations)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS transfers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
+    to_warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
+    status TEXT NOT NULL DEFAULT 'draft'
+        CHECK (status IN ('draft', 'waiting', 'ready', 'done', 'canceled')),
+    created_at TEXT DEFAULT (datetime('now')),
+    validated_at TEXT,
+    CHECK (from_warehouse_id != to_warehouse_id)
+);
+
+CREATE TABLE IF NOT EXISTS transfer_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transfer_id INTEGER NOT NULL REFERENCES transfers(id),
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL CHECK (quantity > 0)
+);
