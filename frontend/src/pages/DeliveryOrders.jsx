@@ -42,14 +42,22 @@ function DeliveryOrders() {
           </tr>
         </thead>
         <tbody>
-          {filteredDeliveries.map((item) => (
-            <tr key={item.id}>
-              <td>{item.product}</td>
-              <td>{item.qty}</td>
-              <td>{item.status}</td>
-              <td>{item.warehouse}</td>
+          {filteredDeliveries.length === 0 ? (
+            <tr>
+              <td colSpan="4" className="empty-state">
+                No delivery orders match your filters.
+              </td>
             </tr>
-          ))}
+          ) : (
+            filteredDeliveries.map((item) => (
+              <tr key={item.id}>
+                <td>{item.product}</td>
+                <td>{item.qty}</td>
+                <td>{item.status}</td>
+                <td>{item.warehouse}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
