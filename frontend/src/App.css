@@ -25,3 +25,35 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+
+.main-content h2 {
+  color: #1B2A63;
+  margin-bottom: 16px;
+}
+
+.filter-bar {
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 14px;
+  color: #1B2A63;
+  border-bottom: 1px solid #E5E9F2;
+}
+
+th {
+  background: #EEF1FA;
+  color: #6C7A9C;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
