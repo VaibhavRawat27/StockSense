@@ -17,7 +17,7 @@ function Sidebar() {
 
         <div className="nav-group-label">Master Data & Settings</div>
         <NavLink to="/settings/warehouse" className="nav-item sub-item">Warehouse Setup</NavLink>
-        <NavLink to="/settings" className="nav-item sub-item">System Settings</NavLink>
+        <NavLink to="/settings" end className="nav-item sub-item">System Settings</NavLink>
       </nav>
       <div className="sidebar-footer">
         <NavLink to="/login" className="nav-item">Auth Portal / Login</NavLink>
