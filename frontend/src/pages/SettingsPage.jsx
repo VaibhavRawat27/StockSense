@@ -14,7 +14,7 @@ const C = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('warehouse'); // 'warehouse' | 'general'
+  const [activeTab, setActiveTab] = useState('general'); // 'warehouse' | 'general'
 
   const tabs = [
     { key: 'warehouse', label: 'Warehouse Setup', icon: Building2 },
