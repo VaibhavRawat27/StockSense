@@ -44,15 +44,23 @@ function MoveHistory() {
           </tr>
         </thead>
         <tbody>
-          {filteredMoves.map((item) => (
-            <tr key={item.id}>
-              <td>{item.date}</td>
-              <td>{item.product}</td>
-              <td>{item.qty}</td>
-              <td>{item.type}</td>
-              <td>{item.warehouse}</td>
+          {filteredMoves.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="empty-state">
+                No stock movements match your filters.
+              </td>
             </tr>
-          ))}
+          ) : (
+            filteredMoves.map((item) => (
+              <tr key={item.id}>
+                <td>{item.date}</td>
+                <td>{item.product}</td>
+                <td>{item.qty}</td>
+                <td>{item.type}</td>
+                <td>{item.warehouse}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

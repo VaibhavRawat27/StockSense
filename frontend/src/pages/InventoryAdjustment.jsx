@@ -42,14 +42,22 @@ function InventoryAdjustment() {
           </tr>
         </thead>
         <tbody>
-          {filteredAdjustments.map((item) => (
-            <tr key={item.id}>
-              <td>{item.product}</td>
-              <td>{item.qty}</td>
-              <td>{item.status}</td>
-              <td>{item.warehouse}</td>
+          {filteredAdjustments.length === 0 ? (
+            <tr>
+              <td colSpan="4" className="empty-state">
+                No adjustments match your filters.
+              </td>
             </tr>
-          ))}
+          ) : (
+            filteredAdjustments.map((item) => (
+              <tr key={item.id}>
+                <td>{item.product}</td>
+                <td>{item.qty}</td>
+                <td>{item.status}</td>
+                <td>{item.warehouse}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

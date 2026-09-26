@@ -82,3 +82,10 @@ tbody tr:last-child td {
   justify-content: flex-end;
   margin-bottom: 24px;
 }
+.empty-state {
+  text-align: center;
+  padding: 48px 20px !important;
+  color: #8892B0;
+  font-size: 14px;
+  font-style: italic;
+}
