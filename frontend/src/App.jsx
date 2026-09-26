@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Receipts from './pages/Receipts';
 import MoveHistory from './pages/MoveHistory';
 import DeliveryOrders from './pages/DeliveryOrders';
+import InternalTransfers from './pages/InternalTransfers';
 import InventoryAdjustment from './pages/InventoryAdjustment';
 import ProductsPage from './pages/ProductsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -31,6 +32,7 @@ function ProtectedLayout({ user, onLogout }) {
           <Route path="/operations/receipts" element={<Receipts />} />
           <Route path="/operations/move-history" element={<MoveHistory />} />
           <Route path="/operations/delivery" element={<DeliveryOrders />} />
+          <Route path="/operations/transfers" element={<InternalTransfers />} />
           <Route path="/operations/adjustments" element={<InventoryAdjustment />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/warehouse" element={<WarehouseSettings />} />
