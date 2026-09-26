@@ -128,3 +128,18 @@ CREATE TABLE IF NOT EXISTS transfer_items (
     product_id INTEGER NOT NULL REFERENCES products(id),
     quantity INTEGER NOT NULL CHECK (quantity > 0)
 );
+
+-- ============================================================
+-- STOCK ADJUSTMENTS (Phase 3 — Reconcile recorded vs physical count)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS adjustments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
+    previous_quantity INTEGER NOT NULL,
+    counted_quantity INTEGER NOT NULL,
+    difference INTEGER NOT NULL,
+    reason TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+);
