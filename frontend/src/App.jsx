@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Receipts from './pages/Receipts';
 import MoveHistory from './pages/MoveHistory';
+import DeliveryOrders from './pages/DeliveryOrders';
 import './App.css';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/operations/receipts" element={<Receipts />} />
           <Route path="/operations/move-history" element={<MoveHistory />} />
+          <Route path="/operations/delivery" element={<DeliveryOrders />} />
         </Routes>
       </main>
     </div>
