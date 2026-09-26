@@ -1,194 +1,206 @@
 # 📦 StockSense — Inventory & Warehouse Management System
 
-StockSense is an intelligent inventory and warehouse management system featuring full-stack authentication, master data management, and operational workflows powered by **SQLite** (`better-sqlite3` / `node:sqlite`), **Express.js**, and **React (Vite)**.
+StockSense is an intelligent inventory and warehouse management system featuring a secure, full-stack authentication portal powered by **SQLite** (`better-sqlite3`), **Express.js**, and **React (Vite)**.
+
+The system is designed for two primary operational roles:
+- 👔 **Inventory Manager**: Oversees inventory valuation, stock audits, purchasing approvals, and warehouse personnel.
+- 👷 **Warehouse Staff**: Handles floor operations, receiving, picking, barcode/RFID scanning, and batch tracking.
 
 ---
 
-## ⚡ Phase 4 Deliverables: Performance Search, Reorder Alerts & Auth Lockdown
+## 🌟 Key Features
 
-Phase 4 secures and supercharges the product catalog and warehouse master data to plug cleanly and safely into the rest of the application:
-
-### 1. High-Performance SKU Search & Smart Filters (< 1s DoD)
-- **Indexed Search Engine**: Dedicated B-Tree indexes on `products(sku)`, `products(name)`, `products(barcode)`, `products(category_id)`, and `stock_levels(product_id, warehouse_id)`.
-- **Query Benchmarking**: Execution times consistently clock in at **~1.2ms - 2.5ms** (far exceeding the < 1000ms definition of done).
-- **Smart Filter Parameters** on `GET /api/products`:
-  - `sku`: Exact or partial SKU lookup (e.g., `SCAN-PRO-01`).
-  - `search`: Full text search matching product name, SKU, or barcode.
-  - `category_id` / `category`: Filter by category ID or name.
-  - `warehouse_id`: Filter by storage facility availability.
-  - `status`: Smart status filter (`low_stock`, `reorder_needed`, `optimal`, `out_of_stock`, `overstock`).
-  - `min_price` & `max_price`: Range filtering.
-  - `sort_by` & `sort_order`: Dynamic sorting (`name`, `sku`, `price`, `total_stock`, `created_at`).
-
-### 2. Low-Stock Alerts Hooked to Reordering Rules & KPI Feed
-- **Dynamic Reordering Engine**: Evaluates `total_stock <= min_stock` for every SKU across all storage locations.
-- **Dedicated Alerts Endpoint**: `GET /api/products/alerts`
-  - Calculates on-hand total stock, minimum threshold, stock deficit (`min_stock - total_stock`), and suggested replenishment quantity (`reorder_qty`).
-- **Live KPI Feed Integration**: `GET /api/health`
-  - Feeds `kpi.low_stock_alerts_count` and `kpi.total_units_in_stock` directly into system-wide dashboard feeds in real-time.
-
-### 3. Route Security Behind Auth Middleware
-- All master data and inventory endpoints are guarded with JWT `verifyToken` middleware (`Authorization: Bearer <token>`):
-  - `/api/products/*`
-  - `/api/warehouses/*`
-  - `/api/categories/*`
-  - `/api/stock/*`
-- Unauthenticated requests are immediately rejected with `401 Unauthorized` (`{ success: false, message: "Access denied. No token provided." }`).
-- Frontend API client automatically injects stored bearer tokens from `localStorage` into all request headers.
+- **SQLite Engine with WAL Mode**: Fast, zero-config embedded database stored locally at `backend/data/stock-sense.db` with Write-Ahead Logging for high concurrency.
+- **Role-Based Authentication**: Built-in support for `manager` and `staff` access levels with custom user profile attributes.
+- **Security & Password Hashing**: Passwords encrypted with salted `bcryptjs` hashing; stateless authentication powered by JSON Web Tokens (JWT).
+- **Comprehensive User Profile**: Stored attributes include:
+  - Full Name
+  - Unique Employee ID (e.g., `MGR-1001`, `STF-2042`)
+  - Role (`manager` or `staff`)
+  - Work Email (Unique, case-insensitive)
+  - Phone Number
+  - Assigned Warehouse Batch / Shift Code (e.g., `BATCH-HQ-ALPHA`, `BATCH-WH-BAY3`)
+- **Modern Industrial Dark UI**: Built with responsive glassmorphism, glowing telemetry indicators, custom SVG icons from Lucide, and typography with *Plus Jakarta Sans* and *JetBrains Mono*.
+- **1-Click Demo Accounts**: Instant pre-seeded credentials for testing both Manager and Staff roles immediately.
 
 ---
 
-## 🌟 Master Data Management (Phase 3)
+## 🗄️ Database Schema
 
-The master data module forms the core product catalog, categories taxonomy, multi-facility warehouse setup, and reordering rules that every operational module (receipts, delivery orders, internal transfers, and adjustments) depends on.
+The SQLite schema is automatically created and initialized upon server startup:
 
-### 1. Product Catalog & Reordering Rules
-- **Fields**: Name, SKU / Code, Category, Unit of Measure (UOM: `Units`, `Boxes`, `Pallets`, `Kg`, `Liters`, `Meters`, `Rolls`, `Packs`), Description, Barcode, Price.
-- **Reordering Rules Configuration**:
-  - `min_stock` (Reorder Point threshold): Automatically triggers low stock warning badges when on-hand stock falls to or below this level.
-  - `max_stock`: Storage capacity ceiling.
-  - `reorder_qty`: Recommended replenishment batch quantity.
-  - `preferred_vendor`: Preferred supplier or manufacturer.
-- **Initial Stock Allocation**: Optional allocation of starting stock across warehouses and specific storage bins upon product creation.
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    employee_id TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL CHECK(role IN ('manager', 'staff')),
+    email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password TEXT NOT NULL,
+    phone_number TEXT,
+    batch TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
-### 2. Product Category Management
-- Categorize and organize products into structured taxonomies (e.g., *Electronics & Sensors*, *Packaging & Materials*, *Material Handling*, *Safety & PPE*, *Storage & Racking*).
-- Track SKU counts and total units stored per category.
-- CRUD operations with protective checks against deleting categories in active use.
-
-### 3. Stock Availability per Location
-- Multi-facility visibility of on-hand inventory across all active warehouse sites.
-- Breakdown includes: Warehouse Name, Facility Code, On-hand Quantity, Storage Bin Location (e.g. `A-12-01`, `BAY-H-01`), and Reorder Status.
-- Quick on-hand adjustment tool with audit trail logging to `stock_ledger` and `adjustments`.
-
-### 4. Warehouse Setup (`Settings → Warehouse`)
-- Configure physical facilities: Warehouse Name, Facility Code (e.g., `WH-CENTRAL`, `WH-EAST`, `WH-WEST`), Full Address, Type (e.g., Central Distribution Hub, Regional Fulfillment, Cross-Dock), Storage Capacity, Active/Inactive status, and Site Contacts.
-- Live capacity utilization tracking gauge (`(total_units / capacity) * 100`).
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_employee_id ON users(employee_id);
+```
 
 ---
 
-## 🗄️ Database Architecture
+## 🔑 Pre-Seeded Demo Credentials
 
-Stored in SQLite at `backend/data/stock-sense.db` with WAL mode enabled:
+| Role | Name | Email | Password | Employee ID | Shift / Batch |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Inventory Manager** | Sarah Jenkins | `manager@stocksense.com` | `Manager@123` | `MGR-1001` | `BATCH-HQ-ALPHA` |
+| **Warehouse Staff** | Marcus Vance | `staff@stocksense.com` | `Staff@123` | `STF-2042` | `BATCH-WH-BAY3` |
 
-- `products`: Product catalog, SKU, UOM, category_id, min_stock, max_stock, reorder_qty, preferred_vendor.
-- `categories`: Product category hierarchy and codes.
-- `warehouses`: Physical facilities, capacity, address, and operational status.
-- `stock_levels`: Location-specific on-hand inventory balances (`product_id`, `warehouse_id`, `quantity`, `bin_location`).
-- `suppliers`: Supplier and vendor contact directory.
-- `stock_ledger`: Immutable audit trail for all stock movements.
-- `users`: Role-based authentication (`manager`, `staff`).
-- `password_resets`: Password reset OTP verification codes (6-digit), tokens, expiry timestamps, and usage tracking.
+> *Note: You can also use the **Register Personnel** tab to sign up new custom managers or warehouse staff.*
 
 ---
 
-## 🔑 Google SMTP Password Reset Flow
+## 🚀 Quick Start Guide
 
-StockSense includes an end-to-end Password Recovery module powered by **Google SMTP** with **Google App Passwords**:
-
-### How to Configure Google SMTP (`backend/.env`):
-1. Go to your **Google Account** ([https://myaccount.google.com/](https://myaccount.google.com/)).
-2. Under **Security**, confirm **2-Step Verification** is turned **ON**.
-3. Search for **App passwords** or visit: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
-4. Create an app named **"StockSense"** and copy the 16-character code (e.g. `abcd efgh ijkl mnop`).
-5. Open `backend/.env` and update:
-   ```env
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=465
-   SMTP_SECURE=true
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASS=abcdefghijklmnop
-   SMTP_FROM="StockSense Security <your-email@gmail.com>"
-   ```
-> *Development Note*: In local development, if SMTP credentials have not yet been populated, the system runs in safe development simulation mode: generated 6-digit OTP codes and direct reset links are displayed on the server terminal and surfaced in the dev banner.
-
-### Password Recovery Endpoints:
-- `POST /api/auth/forgot-password`: Generates a 6-digit OTP code + secure token with 15-minute expiration, stores in SQLite, and dispatches rich HTML email via Google SMTP.
-- `POST /api/auth/verify-reset-code`: Verifies code/token validity before submitting password.
-- `POST /api/auth/reset-password`: Validates code, enforces password rules, encrypts new password with bcrypt, updates SQLite `users` table, and invalidates the token.
-- `GET /api/auth/smtp-status`: Reports active Google SMTP connection readiness.
+### 1. Prerequisites
+- **Node.js** (v18.0.0 or higher recommended)
+- **npm** (bundled with Node.js)
 
 ---
 
-## 📡 API Reference
+### 2. Backend Setup
+
+```bash
+# Navigate to the backend directory
+cd backend
+
+# Install dependencies
+npm install
+
+# Start the backend server (runs on http://localhost:5000)
+npm run dev
+```
+
+*The backend will automatically create `backend/data/stock-sense.db` and seed the demo accounts if they do not already exist.*
+
+---
+
+### 3. Frontend Setup
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the Vite development server (runs on http://localhost:5173)
+npm run dev
+```
+
+Open your browser at **[http://localhost:5173](http://localhost:5173)** to access the StockSense portal.
+
+---
+
+## 📡 Backend API Reference
 
 Base URL: `http://localhost:5000/api`
 
-### Auth & Password Recovery Endpoints (Public)
-- `POST /api/auth/login`: Authenticate with email & password, receives JWT.
-- `POST /api/auth/register`: Create inventory manager or warehouse staff account.
-- `POST /api/auth/forgot-password`: Request password reset email via Google SMTP.
-- `POST /api/auth/verify-reset-code`: Validate 6-digit OTP reset code.
-- `POST /api/auth/reset-password`: Update account password with verification code.
-- `GET /api/auth/smtp-status`: Check Google SMTP configuration status.
-- `GET /api/auth/me`: Validate JWT and return current user profile (*Requires Bearer Token*).
+### Authentication Endpoints
 
-### Products (Auth Guarded 🔒)
-- `GET /api/products`: Fast search and smart filters (`sku`, `search`, `category_id`, `warehouse_id`, `status`, `min_price`, `max_price`, `sort_by`, `sort_order`).
-- `GET /api/products/alerts`: Live reorder rule alert feed with calculated stock deficit and suggested reorder quantities.
-- `GET /api/products/:id`: Get product details and location breakdown.
-- `POST /api/products`: Create product with reorder rules and optional initial stock.
-- `PUT /api/products/:id`: Update product info and reordering rules.
-- `DELETE /api/products/:id`: Safely delete product and clean up associated records.
+#### `POST /auth/register` (alias `/auth/signup`)
+Registers a new warehouse employee or inventory manager.
 
-### Categories (Auth Guarded 🔒)
-- `GET /api/categories`: List categories with product count and total stock units.
-- `POST /api/categories`: Create category (`name`, `code`, `description`).
-- `PUT /api/categories/:id`: Update category.
-- `DELETE /api/categories/:id`: Delete category (protected if products assigned).
+- **Request Body**:
+  ```json
+  {
+    "name": "Liam Foster",
+    "employee_id": "MGR-1045",
+    "role": "manager",
+    "email": "liam.foster@stocksense.com",
+    "password": "Password@123",
+    "phone_number": "+1 555-0199",
+    "batch": "BATCH-BAY-02"
+  }
+  ```
+- **Response**: `201 Created` with JWT token and user profile object.
 
-### Warehouses (Auth Guarded 🔒)
-- `GET /api/warehouses`: List warehouses with live capacity utilization and stored unit counts.
-- `GET /api/warehouses/:id`: Get warehouse facility details and current inventory items.
-- `POST /api/warehouses`: Create warehouse facility.
-- `PUT /api/warehouses/:id`: Update warehouse settings.
-- `DELETE /api/warehouses/:id`: Delete warehouse facility (protected if stock > 0).
+#### `POST /auth/login`
+Authenticates a user using email (or Employee ID) and password.
 
-### Stock Availability (Auth Guarded 🔒)
-- `GET /api/stock`: Location stock availability with filters (`?warehouse_id=`, `?product_id=`, `?low_stock_only=true`).
-- `PUT /api/stock/adjust`: Quick adjust on-hand count or bin location with audit note.
-- `GET /api/stock/alerts`: List products currently triggering reorder alerts.
+- **Request Body**:
+  ```json
+  {
+    "email": "manager@stocksense.com",
+    "password": "Manager@123"
+  }
+  ```
+- **Response**: `200 OK` with JWT token and user profile object.
 
-### System & KPI Feed (Public)
-- `GET /api/health`: Health status and live dashboard KPIs (`low_stock_alerts_count`, `total_units_in_stock`).
+#### `GET /auth/me`
+Retrieves profile details for the currently logged-in user.
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: `200 OK` with user details.
+
+#### `GET /auth/team`
+Returns all registered personnel stored in the SQLite database (passwords omitted).
+- **Headers**: `Authorization: Bearer <token>`
+- **Response**: `200 OK` with array of users.
+
+### System Endpoints
+
+#### `GET /health`
+Returns system status, timestamp, SQLite connection health, and total registered user count.
 
 ---
 
-## 🧪 Test Suite & Verification
+## 📁 Project Directory Structure
 
-The project includes unit, security, performance, and end-to-end integration tests:
-
-```bash
-cd backend
-
-# Run Phase 4 Auth, Product & Performance Test Suite (53 assertions)
-npm test
-
-# Run Forgot Password & Google SMTP Test Suite (26 assertions)
-npm run test:forgot-password
-
-# Run Operational Flow End-to-End Test (Receipts -> Transfers -> Deliveries -> Adjustments)
-npm run test:e2e
+```text
+StockSense/
+├── backend/
+│   ├── data/
+│   │   └── stock-sense.db          # SQLite database file (WAL mode)
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── database.js         # SQLite connection & table initialization
+│   │   ├── controllers/
+│   │   │   └── authController.js   # Register, Login, Me & Team handlers
+│   │   ├── middleware/
+│   │   │   └── authMiddleware.js   # JWT verification middleware
+│   │   ├── routes/
+│   │   │   └── authRoutes.js       # /api/auth routing definitions
+│   │   └── server.js               # Express server configuration
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── AuthPage.jsx        # Auth UI (Login, Register & Status card)
+│   │   ├── services/
+│   │   │   └── api.js              # Fetch client and session storage handlers
+│   │   ├── App.jsx                 # Main application component
+│   │   ├── index.css               # Design system & dark theme tokens
+│   │   └── main.jsx
+│   ├── vite.config.js              # Vite server with /api proxy to port 5000
+│   ├── index.html                  # HTML entry with typography links
+│   └── package.json
+│
+└── README.md                       # Project documentation
 ```
 
 ---
 
-## 🚀 Running the Project
+## 🛠️ Tech Stack
 
-```bash
-# Backend (Port 5000)
-cd backend
-npm install
-npm run dev
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 19, Vite, Lucide React Icons, Modern CSS Design Tokens |
+| **Backend** | Node.js, Express.js (v5), CORS |
+| **Database** | SQLite3 via `better-sqlite3` (with WAL mode enabled) |
+| **Security** | `bcryptjs` (Salted Password Hashing), `jsonwebtoken` (JWT) |
 
-# Frontend (Port 5173)
-cd frontend
-npm install
-npm run dev
-```
+---
 
-Navigate to:
-- **Products & Catalog**: [http://localhost:5173/products](http://localhost:5173/products)
-- **Settings → Warehouse Setup**: [http://localhost:5173/settings/warehouse](http://localhost:5173/settings/warehouse)
-- **Authentication**: [http://localhost:5173/login](http://localhost:5173/login)
-
+## 📄 License
+ISC
