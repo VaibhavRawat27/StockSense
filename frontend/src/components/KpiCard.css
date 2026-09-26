@@ -1,0 +1,22 @@
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #E3E6F0;
+  border-radius: 10px;
+  padding: 18px 20px;
+  min-width: 180px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.kpi-label {
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8892B0;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #1B2A63;
+}
