@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import WarehouseSwitcher from './components/WarehouseSwitcher';
 import Dashboard from './pages/Dashboard';
 import Receipts from './pages/Receipts';
 import MoveHistory from './pages/MoveHistory';
@@ -15,6 +16,9 @@ function App() {
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
+        <div className="top-bar">
+          <WarehouseSwitcher />
+        </div>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/products" element={<ProductsPage />} />

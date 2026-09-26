@@ -1,0 +1,27 @@
+.filter-bar select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #ffffff;
+  border: 1px solid #DDE2F0;
+  border-radius: 8px;
+  padding: 9px 32px 9px 14px;
+  font-size: 13px;
+  color: #3A4368;
+  font-weight: 500;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C7A9C' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-bar select:hover {
+  border-color: #B7C0E0;
+}
+
+.filter-bar select:focus {
+  outline: none;
+  border-color: #7FD1FF;
+  box-shadow: 0 0 0 3px rgba(127, 209, 255, 0.25);
+}
