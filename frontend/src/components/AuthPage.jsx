@@ -88,7 +88,7 @@ function Alert({ type, children }) {
   );
 }
 
-export default function AuthPage({ onEnterMasterData }) {
+export default function AuthPage({ onEnterMasterData, onAuthChange }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -178,6 +178,7 @@ export default function AuthPage({ onEnterMasterData }) {
     setSuccessMsg('');
     setErrorMsg('');
     setLoginPassword('');
+    if (onAuthChange) onAuthChange(null);
   };
 
   const handleLoginSubmit = async (e) => {
@@ -195,6 +196,7 @@ export default function AuthPage({ onEnterMasterData }) {
       const res = await api.login(loginEmail.trim(), loginPassword);
       setLoggedInUser(res.user);
       setSuccessMsg('Login Successful!');
+      if (onAuthChange) onAuthChange(res.user);
     } catch (err) {
       setErrorMsg(err.message || 'Login failed. Please verify your credentials.');
     } finally {
@@ -230,6 +232,7 @@ export default function AuthPage({ onEnterMasterData }) {
 
       setLoggedInUser(res.user);
       setSuccessMsg(`Registration Successful! Account created in SQLite.`);
+      if (onAuthChange) onAuthChange(res.user);
     } catch (err) {
       setErrorMsg(err.message || 'Registration failed.');
     } finally {
