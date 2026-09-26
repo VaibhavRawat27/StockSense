@@ -1,3 +1,4 @@
+import './FilterBar.css';
 function FilterBar({ onTypeChange, onStatusChange, onWarehouseChange, onCategoryChange }) {
   return (
     <div className="filter-bar">
