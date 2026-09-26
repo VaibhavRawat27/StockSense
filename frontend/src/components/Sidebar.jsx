@@ -7,7 +7,13 @@ function Sidebar() {
       <nav className="sidebar-nav">
         <a href="#" className="nav-item active">Dashboard</a>
         <a href="#" className="nav-item">Products</a>
-        <a href="#" className="nav-item">Operations</a>
+
+        <div className="nav-group-label">Operations</div>
+        <a href="#" className="nav-item sub-item">Receipts</a>
+        <a href="#" className="nav-item sub-item">Delivery Orders</a>
+        <a href="#" className="nav-item sub-item">Inventory Adjustment</a>
+        <a href="#" className="nav-item sub-item">Move History</a>
+
         <a href="#" className="nav-item">Settings</a>
       </nav>
       <div className="sidebar-footer">

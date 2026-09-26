@@ -48,3 +48,16 @@
   border-top: 1px solid rgba(255,255,255,0.1);
   padding-top: 12px;
 }
+
+.nav-group-label {
+  color: #6C7A9C;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 14px 20px 4px 20px;
+}
+
+.sub-item {
+  padding-left: 34px;
+  font-size: 13px;
+}
