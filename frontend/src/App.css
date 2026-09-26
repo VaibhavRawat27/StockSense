@@ -77,15 +77,41 @@ tbody tr:hover {
 tbody tr:last-child td {
   border-bottom: none;
 }
+
 .top-bar {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 24px;
 }
+
 .empty-state {
   text-align: center;
   padding: 48px 20px !important;
   color: #8892B0;
   font-size: 14px;
   font-style: italic;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: #6C7A9C;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 24px 24px;
+  }
+
+  .kpi-row {
+    gap: 12px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
 }

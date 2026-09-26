@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FilterBar from '../components/FilterBar';
 
 const mockMoves = [
@@ -9,10 +9,16 @@ const mockMoves = [
 ];
 
 function MoveHistory() {
+  const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 700);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredMoves = mockMoves.filter((item) => {
     return (
@@ -33,36 +39,40 @@ function MoveHistory() {
         onCategoryChange={setCategoryFilter}
       />
 
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Type</th>
-            <th>Warehouse</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredMoves.length === 0 ? (
+      {isLoading ? (
+        <div className="loading-state">Loading move history…</div>
+      ) : (
+        <table>
+          <thead>
             <tr>
-              <td colSpan="5" className="empty-state">
-                No stock movements match your filters.
-              </td>
+              <th>Date</th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Type</th>
+              <th>Warehouse</th>
             </tr>
-          ) : (
-            filteredMoves.map((item) => (
-              <tr key={item.id}>
-                <td>{item.date}</td>
-                <td>{item.product}</td>
-                <td>{item.qty}</td>
-                <td>{item.type}</td>
-                <td>{item.warehouse}</td>
+          </thead>
+          <tbody>
+            {filteredMoves.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="empty-state">
+                  No stock movements match your filters.
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              filteredMoves.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.date}</td>
+                  <td>{item.product}</td>
+                  <td>{item.qty}</td>
+                  <td>{item.type}</td>
+                  <td>{item.warehouse}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
