@@ -4,6 +4,7 @@ const db = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const receiptRoutes = require("./routes/receiptRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
+const transferRoutes = require("./routes/transferRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/deliveries", deliveryRoutes);
+app.use("/api/transfers", transferRoutes);
 
 app.get("/", (req, res) => {
     res.json({
