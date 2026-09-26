@@ -372,4 +372,52 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  // ==========================================
+  // DELIVERY ORDERS (Auth-guarded)
+  // ==========================================
+
+  async getDeliveries(params = {}) {
+    const cleanParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+    );
+    const query = new URLSearchParams(cleanParams).toString();
+    const response = await fetch(`${API_BASE}/deliveries${query ? `?${query}` : ''}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
+
+  async getDeliveryById(id) {
+    const response = await fetch(`${API_BASE}/deliveries/${id}`, {
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
+
+  async createDelivery(data) {
+    const response = await fetch(`${API_BASE}/deliveries`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async validateDelivery(id) {
+    const response = await fetch(`${API_BASE}/deliveries/${id}/validate`, {
+      method: 'POST',
+      headers: {
+        ...getAuthHeaders(),
+      },
+    });
+    return handleResponse(response);
+  },
 };
