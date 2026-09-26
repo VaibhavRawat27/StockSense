@@ -29,3 +29,22 @@
   color: #1B2A63;
   line-height: 1.1;
 }
+.kpi-alert {
+  border-left: 4px solid #FF6B6B;
+  background: #FFF9F9;
+}
+
+.kpi-alert .kpi-value {
+  color: #E4483F;
+}
+
+.kpi-badge {
+  display: inline-block;
+  margin-top: 10px;
+  background: #FFE5E5;
+  color: #E4483F;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
