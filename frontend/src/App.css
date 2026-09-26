@@ -77,3 +77,8 @@ tbody tr:hover {
 tbody tr:last-child td {
   border-bottom: none;
 }
+.top-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
